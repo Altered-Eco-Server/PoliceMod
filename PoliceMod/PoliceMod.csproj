@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json.Legacy" Version="3.5.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Eco.Core">
+      <HintPath>..\..\..\..\Desktop\Modkit 9.7.7\ReferenceAssemblies\Eco.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Eco.Gameplay">
+      <HintPath>..\..\..\..\Desktop\Modkit 9.7.7\ReferenceAssemblies\Eco.Gameplay.dll</HintPath>
+    </Reference>
+    <Reference Include="Eco.ModKit">
+      <HintPath>..\..\..\..\Desktop\Modkit 9.7.7\ReferenceAssemblies\Eco.ModKit.dll</HintPath>
+    </Reference>
+    <Reference Include="Eco.Mods">
+      <HintPath>..\..\..\..\Desktop\Modkit 9.7.7\ReferenceAssemblies\Eco.Mods.dll</HintPath>
+    </Reference>
+    <Reference Include="Eco.Networking.ENet">
+      <HintPath>..\..\..\..\Desktop\Modkit 9.7.7\ReferenceAssemblies\Eco.Networking.ENet.dll</HintPath>
+    </Reference>
+    <Reference Include="Eco.Plugins">
+      <HintPath>..\..\..\..\Desktop\Modkit 9.7.7\ReferenceAssemblies\Eco.Plugins.dll</HintPath>
+    </Reference>
+    <Reference Include="Eco.Shared">
+      <HintPath>..\..\..\..\Desktop\Modkit 9.7.7\ReferenceAssemblies\Eco.Shared.dll</HintPath>
+    </Reference>
+    <Reference Include="Eco.Simulation">
+      <HintPath>..\..\..\..\Desktop\Modkit 9.7.7\ReferenceAssemblies\Eco.Simulation.dll</HintPath>
+    </Reference>
+    <Reference Include="Eco.Stats">
+      <HintPath>..\..\..\..\Desktop\Modkit 9.7.7\ReferenceAssemblies\Eco.Stats.dll</HintPath>
+    </Reference>
+    <Reference Include="Eco.WebServer">
+      <HintPath>..\..\..\..\Desktop\Modkit 9.7.7\ReferenceAssemblies\Eco.WebServer.dll</HintPath>
+    </Reference>
+    <Reference Include="Eco.World">
+      <HintPath>..\..\..\..\Desktop\Modkit 9.7.7\ReferenceAssemblies\Eco.World.dll</HintPath>
+    </Reference>
+    <Reference Include="Eco.WorldGenerator">
+      <HintPath>..\..\..\..\Desktop\Modkit 9.7.7\ReferenceAssemblies\Eco.WorldGenerator.dll</HintPath>
+    </Reference>
+    <Reference Include="EcoServer">
+      <HintPath>..\..\..\..\Desktop\Modkit 9.7.7\ReferenceAssemblies\EcoServer.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
