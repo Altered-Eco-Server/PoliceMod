@@ -62,9 +62,13 @@ namespace Eco.Mods.TechTree
 
         public void Initialize(TimedTask timer)
         {
+            Timer = new(Timer_tick, null, 10000, 10000);
+
             if (!Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
-            Timer = new(Timer_tick, null, 10000, 10000);
+
+            if (WorldTime.Seconds == null || WorldTime.Seconds < 60) Reset();
+
             if (File.Exists(dir + @"\IncarceratedPlayers.json"))
                 incarceratedPlayers = JsonConvert.DeserializeObject<Dictionary<string, double>>(File.ReadAllText(dir + @"\IncarceratedPlayers.json"));
             if (File.Exists(dir + @"\OccupiedCells.json"))
@@ -142,24 +146,35 @@ namespace Eco.Mods.TechTree
             return cellNum;
         }
 
+        private static void Reset()
+        {
+            File.Delete(dir + @"\IncarceratedPlayers.json");
+            File.Delete(dir + @"\OccupiedCells.json");
+            File.Delete(dir + @"\EscapeAttempts.json");
+            File.Delete(dir + @"\PoliceLog.alteredeco");
+        }
+
         static void Timer_tick(object state)
         {
             foreach (var player in incarceratedPlayers)
             {
                 User user = UserManager.FindUserByName(player.Key);
-                var isEscaping = Vector3i.DistanceSq(user.Position.XYZi(), GetCellPos(occupiedCells.GetOrDefault(user.Name))) >= 400;
+                if (user.IsOnline)
+                {
+                    var isEscaping = Vector3i.DistanceSq(user.Position.XYZi(), GetCellPos(occupiedCells.GetOrDefault(user.Name))) >= 400;
 
-                if (WorldTime.Seconds >= player.Value)
-                {
-                    Release(user);
-                }
-                if (isEscaping)
-                {
-                    user.Player.SetPosition(GetCellPos(occupiedCells.GetOrDefault(player.Key)));
-                    incarceratedPlayers[user.Name] += TimeUtil.HoursToSeconds(2);
-                    escapeAttempts[user.Name] += 1;
-                    ReputationManager.Obj.GiveRep("Tried to escape jail", user, -5, null, true);
-                    user.Player.OkBox(new LocString("You just added 2 hours to your sentence for trying to escape!"));
+                    if (WorldTime.Seconds >= player.Value)
+                    {
+                        Release(user);
+                    }
+                    if (isEscaping)
+                    {
+                        user.Player.SetPosition(GetCellPos(occupiedCells.GetOrDefault(player.Key)));
+                        incarceratedPlayers[user.Name] += TimeUtil.HoursToSeconds(2);
+                        escapeAttempts[user.Name] += 1;
+                        ReputationManager.Obj.GiveRep("Tried to escape jail", user, -5, null, true);
+                        user.Player.OkBox(new LocString("You just added 2 hours to your sentence for trying to escape!"));
+                    }
                 }
             }
 
