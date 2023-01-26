@@ -104,7 +104,7 @@
 
             foreach (var prisoner in info)
             {
-                message.AppendLineLoc(FormattableStringFactory.Create("<color=#3e78d6>NAME:</color> {0}    <color=#3e78d6>RELEASE:</color> {1}    <color=#3e78d6>TIME LEFT:</color> {2} hours    <color=#3e78d6>ESCAPES:</color> {3}", (object)prisoner.Key, (object)TimeFormatter.FormatDateLong(prisoner.Value), (object)TimeUtil.SecondsToHours(prisoner.Value - WorldTime.Seconds).ToString("0.00"), (object)PrisonerManager.escapeAttempts[prisoner.Key]));
+                message.AppendLineLoc(FormattableStringFactory.Create("<color=#3e78d6>NAME:</color> {0}    <color=#3e78d6>CELL:</color> {4}    <color=#3e78d6>RELEASE:</color> {1}    <color=#3e78d6>TIME LEFT:</color> {2} hours    <color=#3e78d6>ESCAPES:</color> {3}", (object)prisoner.Key, (object)TimeFormatter.FormatDateLong(prisoner.Value), (object)TimeUtil.SecondsToHours(prisoner.Value - WorldTime.Seconds).ToString("0.00"), (object)PrisonerManager.escapeAttempts[prisoner.Key], (object)PrisonerManager.occupiedCells[prisoner.Key]));
             }
             user.Player.OpenInfoPanel(title.ToString(), new LocString(message.ToString()), "Prisoner Report");
         }

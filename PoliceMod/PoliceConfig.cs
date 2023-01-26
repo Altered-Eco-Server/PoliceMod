@@ -12,7 +12,6 @@ using Eco.Mods.Organisms;
 
 namespace Eco.Plugins
 {
-    [Serialized]
     public class Police_Config
     {
         public int Cell1PosX { get; set; }
@@ -28,9 +27,10 @@ namespace Eco.Plugins
         public int ImpoundPosZ { get; set; }
     }
 
+    [Serialized]
     public class PoliceConfig
     {
-        [Serialized] public static string logDir = @"C:\Users\luluq\Desktop\AlteredEco";
+        [Serialized] public static string logDir = Path.Combine(Directory.GetCurrentDirectory(), "AlteredEco");
 
         public static Police_Config configObj => JsonConvert.DeserializeObject<Police_Config>(File.ReadAllText(logDir + @"\PoliceConfig.json"));
         [Serialized] public static int Cell1PosX = configObj.Cell1PosX;
