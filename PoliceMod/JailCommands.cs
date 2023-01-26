@@ -35,6 +35,9 @@
         {
             var x = -1; var y = -1; var z = -1;
             Player player = offender.Player;
+            var inGroup = PrisonerManager.isPrisoner(offender);
+
+            if (inGroup) { user.Player.InfoBox(new LocString(offender.Name + " is already in jail")); return; }
 
             if (offender != null || cellNumber != null)
             {
@@ -55,8 +58,7 @@
             else return;
             var cellPos = new Vector3i(x, y, z);
             player.SetPosition((Vector3)cellPos);
-            var inGroup = PrisonerManager.isPrisoner(offender);
-            if (!inGroup) PrisonerManager.Arrest(offender, cellPos, (double)sentenceTime);
+            PrisonerManager.Arrest(offender, cellPos, (double)sentenceTime);
             offender.Player.OkBoxAwaitable(new LocString("You are in Jail for " + sentenceTime.ToString() + " hours!\n" + reason));
             user.Player.InfoBox(new LocString("You sent " + offender.Name + " to jail cell #" + cellNumber));
             Log.WriteErrorLineLocStr(Localizer.Format("[Altered Eco]: {0} sent {1} to jail cell #{2} on {3} for `{4}`.", (object)user.Name, (object)offender.Name, (object)cellNumber, (object)TimeFormatter.FormatDateLong(WorldTime.Seconds), (object)reason));
