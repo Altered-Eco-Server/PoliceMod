@@ -21,6 +21,7 @@
     using Eco.Gameplay.Systems.Chat;
     using Eco.Gameplay.UI;
     using Eco.Mods.TechTree;
+    using Eco.Plugins;
 
     [ChatCommandHandler]
     public class JailCommands
@@ -66,6 +67,7 @@
         {
             Player player = offender.Player;
             var inGroup = PrisonerManager.isPrisoner(offender);
+
             if (inGroup)
             {
                 player.SetPosition(new Vector3i(Plugins.PoliceConfig.ImpoundPosX, Plugins.PoliceConfig.ImpoundPosY, Plugins.PoliceConfig.ImpoundPosZ));
@@ -86,6 +88,20 @@
         public static void modifySentence(User user, User prisioner, int hoursToChangeBy)
         {
             PrisonerManager.modifySentence(prisioner, (double)hoursToChangeBy);
+        }
+
+        [ChatSubCommand("AlteredEco", "Change the location of a jail cell", "moveCell", ChatAuthorizationLevel.Admin)]
+        public static void changeCellPos(User user, int cellNum, int x, int y, int z)
+        {
+            PoliceConfig.ChangeCellLoc(cellNum, x, y, z);
+            user.Player.InfoBox(new LocString("Cell location " + cellNum + " changed to (" + x + "," + y + "," + z + ")"));
+        }
+
+        [ChatSubCommand("AlteredEco", "Change the location of impound", "moveImpound", ChatAuthorizationLevel.Admin)]
+        public static void changeImpoundPos(User user, int x, int y, int z)
+        {
+            PoliceConfig.ChangeImpoundLoc(x, y, z);
+            user.Player.InfoBox(new LocString("Impound location changed to (" + x + "," + y + "," + z + ")"));
         }
 
         [ChatSubCommand("AlteredEco", "Give yourself any item (Forced, ignores restrictions)", "AFG", ChatAuthorizationLevel.Admin)]

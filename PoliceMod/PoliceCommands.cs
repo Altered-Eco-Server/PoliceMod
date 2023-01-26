@@ -73,6 +73,7 @@
         [ChatSubCommand("Police", "View all Police reports", "reports", ChatAuthorizationLevel.User)]
         public static void Reports(User user)
         {
+
             if (user.SelectedItem is not BadgeItem)
             {
                 user.Player.InfoBox(new LocString("Are you an officer? Let me see your badge."));
@@ -88,6 +89,7 @@
         [ChatSubCommand("Police", "View all players in jail with details about sentence time", "prisoners", ChatAuthorizationLevel.User)]
         public static void Prisoners(User user)
         {
+
             if (user.SelectedItem is not BadgeItem)
             {
                 user.Player.InfoBox(new LocString("Are you an officer? Let me see your badge."));
