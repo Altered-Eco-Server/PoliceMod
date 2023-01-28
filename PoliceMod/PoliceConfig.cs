@@ -30,7 +30,7 @@ namespace Eco.Plugins
     [Serialized]
     public class PoliceConfig
     {
-        [Serialized] public static string logDir = Path.Combine(Directory.GetCurrentDirectory(), "AlteredEco");
+        [Serialized] public static string logDir = Path.Combine(Directory.GetCurrentDirectory(), @"AlteredEco\PoliceMod");
 
         public static Police_Config configObj => JsonConvert.DeserializeObject<Police_Config>(File.ReadAllText(logDir + @"\PoliceConfig.json"));
         [Serialized] public static int Cell1PosX = configObj.Cell1PosX;

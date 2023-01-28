@@ -52,13 +52,15 @@ using Eco.Mods.Organisms;
 namespace Eco.Mods.TechTree
 {
     [Serialized]
-    public class PrisonerManager : IModKitPlugin, IInitializablePlugin
+    public class PoliceManager : IModKitPlugin, IInitializablePlugin
     {
         public Timer Timer;
         private static string dir = PoliceConfig.logDir;
         [Serialized] public static Dictionary<string, double> incarceratedPlayers = new Dictionary<string, double>();
         [Serialized] public static Dictionary<string, int> occupiedCells = new Dictionary<string, int>();
         [Serialized] public static Dictionary<string, int> escapeAttempts = new Dictionary<string, int>();
+        [Serialized] public static Dictionary<string, int> arrestCount = new Dictionary<string, int>();
+        [Serialized] public static Dictionary<string, int> ticketCount = new Dictionary<string, int>();
 
         public void Initialize(TimedTask timer)
         {
@@ -75,6 +77,10 @@ namespace Eco.Mods.TechTree
                 occupiedCells = JsonConvert.DeserializeObject<Dictionary<string, int>>(File.ReadAllText(dir + @"\OccupiedCells.json"));
             if (File.Exists(dir + @"\EscapeAttempts.json"))
                 escapeAttempts = JsonConvert.DeserializeObject<Dictionary<string, int>>(File.ReadAllText(dir + @"\EscapeAttempts.json"));
+            if (File.Exists(dir + @"\ArrestCount.json"))
+                arrestCount = JsonConvert.DeserializeObject<Dictionary<string, int>>(File.ReadAllText(dir + @"\ArrestCount.json"));
+            if (File.Exists(dir + @"\TicketCount.json"))
+                arrestCount = JsonConvert.DeserializeObject<Dictionary<string, int>>(File.ReadAllText(dir + @"\TicketCount.json"));
         }
 
         public static void Arrest(User user, Vector3i cellPos, double sentenceHours)
@@ -87,6 +93,9 @@ namespace Eco.Mods.TechTree
                 occupiedCells.Add(userName, GetCellNum(cellPos));
             if (!escapeAttempts.ContainsKey(userName))
                 escapeAttempts.Add(userName, 0);
+            if (!arrestCount.ContainsKey(userName))
+                arrestCount.Add(userName, 1);
+            else arrestCount[userName]++;
         }
 
         public static void Release(User user)
@@ -156,42 +165,59 @@ namespace Eco.Mods.TechTree
 
         static void Timer_tick(object state)
         {
-            foreach (var player in incarceratedPlayers)
+            try
             {
-                User user = UserManager.FindUserByName(player.Key);
-                if (user.IsOnline)
+                foreach (var player in incarceratedPlayers)
                 {
-                    var isEscaping = Vector3i.DistanceSq(user.Position.XYZi(), GetCellPos(occupiedCells.GetOrDefault(user.Name))) >= 400;
+                    User user = UserManager.FindUserByName(player.Key);
+                    if (user.IsOnline)
+                    {
+                        var isEscaping = Vector3i.DistanceSq(user.Position.XYZi(), GetCellPos(occupiedCells.GetOrDefault(user.Name))) >= 400;
 
-                    if (WorldTime.Seconds >= player.Value)
-                    {
-                        Release(user);
-                    }
-                    if (isEscaping)
-                    {
-                        user.Player.SetPosition(GetCellPos(occupiedCells.GetOrDefault(player.Key)));
-                        incarceratedPlayers[user.Name] += TimeUtil.HoursToSeconds(2);
-                        escapeAttempts[user.Name] += 1;
-                        ReputationManager.Obj.GiveRep("Tried to escape jail", user, -5, null, true);
-                        user.Player.OkBox(new LocString("You just added 2 hours to your sentence for trying to escape!"));
+                        if (WorldTime.Seconds >= player.Value)
+                        {
+                            Release(user);
+                        }
+                        if (isEscaping)
+                        {
+                            user.Player.SetPosition(GetCellPos(occupiedCells.GetOrDefault(player.Key)));
+                            incarceratedPlayers[user.Name] += TimeUtil.HoursToSeconds(2);
+                            escapeAttempts[user.Name] += 1;
+                            ReputationManager.Obj.GiveRep("Tried to escape jail", user, -5, null, true);
+                            user.Player.OkBox(new LocString("You just added 2 hours to your sentence for trying to escape!"));
+                        }
                     }
                 }
-            }
 
-            using (StreamWriter file = File.CreateText(dir + @"\IncarceratedPlayers.json"))
-            {
-                JsonSerializer serializer = new JsonSerializer();
-                serializer.Serialize(file, incarceratedPlayers);
+                using (StreamWriter file = File.CreateText(dir + @"\IncarceratedPlayers.json"))
+                {
+                    JsonSerializer serializer = new JsonSerializer();
+                    serializer.Serialize(file, incarceratedPlayers);
+                }
+                using (StreamWriter file = File.CreateText(dir + @"\OccupiedCells.json"))
+                {
+                    JsonSerializer serializer = new JsonSerializer();
+                    serializer.Serialize(file, occupiedCells);
+                }
+                using (StreamWriter file = File.CreateText(dir + @"\EscapeAttempts.json"))
+                {
+                    JsonSerializer serializer = new JsonSerializer();
+                    serializer.Serialize(file, escapeAttempts);
+                }
+                using (StreamWriter file = File.CreateText(dir + @"\ArrestCount.json"))
+                {
+                    JsonSerializer serializer = new JsonSerializer();
+                    serializer.Serialize(file, arrestCount);
+                }
+                using (StreamWriter file = File.CreateText(dir + @"\TicketCount.json"))
+                {
+                    JsonSerializer serializer = new JsonSerializer();
+                    serializer.Serialize(file, ticketCount);
+                }
             }
-            using (StreamWriter file = File.CreateText(dir + @"\OccupiedCells.json"))
+            catch (Exception e)
             {
-                JsonSerializer serializer = new JsonSerializer();
-                serializer.Serialize(file, occupiedCells);
-            }
-            using (StreamWriter file = File.CreateText(dir + @"\EscapeAttempts.json"))
-            {
-                JsonSerializer serializer = new JsonSerializer();
-                serializer.Serialize(file, escapeAttempts);
+
             }
         }
         public string GetStatus() => "";
