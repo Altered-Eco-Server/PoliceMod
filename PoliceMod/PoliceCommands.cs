@@ -63,15 +63,20 @@
                 worldObject.Position = impound;
                 AdminCommands.Give(owner, itemName, 1);
                 user.Player.InfoBox(new LocString("You gave a parking ticket to " + owner.Name));
+
                 if (owner.IsOnline)
                     owner.Player.InfoBox(new LocString("Your vehicle is in the impound!\n" + reason));
                 WriteLog(user.Name, owner.Name, TimeFormatter.FormatDateLong(WorldTime.Seconds), reason, worldObject.Name);
+
+                if (!PoliceManager.ticketCount.ContainsKey(owner.Name))
+                    PoliceManager.ticketCount.Add(owner.Name, 1);
+                else PoliceManager.ticketCount[owner.Name] += 1;
                 Log.WriteErrorLineLocStr(Localizer.Format("[Altered Eco]: {0} gave a parking ticket to {1} on {2}.", (object)user.Name, (object)owner.Name, (object)TimeFormatter.FormatDateLong(WorldTime.Seconds)));
             }
         }
 
-        [ChatSubCommand("Police", "View all Police reports", "reports", ChatAuthorizationLevel.User)]
-        public static void Reports(User user)
+        [ChatSubCommand("Police", "View all Traffic reports", "trecords", ChatAuthorizationLevel.User)]
+        public static void TrafficRecords(User user)
         {
 
             if (user.SelectedItem is not BadgeItem)
@@ -81,9 +86,9 @@
             }
 
             var title = new StringBuilder();
-            title.Append("<color=#3e78d6>Police Reports</color>");
+            title.Append("<color=#3e78d6>Traffic Records</color>");
             var message = ReadLog();
-            user.Player.OpenInfoPanel(title.ToString(), new LocString(message.ToString()), "Police Reports");
+            user.Player.OpenInfoPanel(title.ToString(), new LocString(message.ToString()), "Traffic Records");
         }
 
         [ChatSubCommand("Police", "View all players in jail with details about sentence time", "prisoners", ChatAuthorizationLevel.User)]
@@ -96,7 +101,7 @@
                 return;
             }
 
-            var info = PrisonerManager.incarceratedPlayers;
+            var info = PoliceManager.incarceratedPlayers;
 
             var title = new StringBuilder();
             var message = new StringBuilder();
@@ -104,7 +109,7 @@
 
             foreach (var prisoner in info)
             {
-                message.AppendLineLoc(FormattableStringFactory.Create("<color=#3e78d6>NAME:</color> {0}    <color=#3e78d6>CELL:</color> {4}    <color=#3e78d6>RELEASE:</color> {1}    <color=#3e78d6>TIME LEFT:</color> {2} hours    <color=#3e78d6>ESCAPES:</color> {3}", (object)prisoner.Key, (object)TimeFormatter.FormatDateLong(prisoner.Value), (object)TimeUtil.SecondsToHours(prisoner.Value - WorldTime.Seconds).ToString("0.00"), (object)PrisonerManager.escapeAttempts[prisoner.Key], (object)PrisonerManager.occupiedCells[prisoner.Key]));
+                message.AppendLineLoc(FormattableStringFactory.Create("<color=#3e78d6>NAME:</color> {0}    <color=#3e78d6>CELL:</color> {4}    <color=#3e78d6>RELEASE:</color> {1}    <color=#3e78d6>TIME LEFT:</color> {2} hours    <color=#3e78d6>ESCAPES:</color> {3}", (object)prisoner.Key, (object)TimeFormatter.FormatDateLong(prisoner.Value), (object)TimeUtil.SecondsToHours(prisoner.Value - WorldTime.Seconds).ToString("0.00"), (object)PoliceManager.escapeAttempts[prisoner.Key], (object)PoliceManager.occupiedCells[prisoner.Key]));
             }
             user.Player.OpenInfoPanel(title.ToString(), new LocString(message.ToString()), "Prisoner Report");
         }
@@ -117,7 +122,7 @@
                     Directory.CreateDirectory(dir);
 
                 var report = GenerateReport(officer, offender, time, reason, vehicle);
-                File.AppendAllLines(dir + @"\PoliceLog.alteredeco", report);
+                File.AppendAllLines(dir + @"\TicketLog.alteredeco", report);
             }
             catch (Exception e)
             {
@@ -131,7 +136,7 @@
 
             try
             {
-                foreach (var line in File.ReadAllLines(dir + @"\PoliceLog.alteredeco"))
+                foreach (var line in File.ReadAllLines(dir + @"\TicketLog.alteredeco"))
                 {
                     lines.AppendLineLoc(FormattableStringFactory.Create(line));
                 }

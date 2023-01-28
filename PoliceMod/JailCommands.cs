@@ -22,22 +22,33 @@
     using Eco.Gameplay.UI;
     using Eco.Mods.TechTree;
     using Eco.Plugins;
+    using Eco.Mods.Organisms;
+    using System.Text;
+    using Eco.Gameplay.Property;
 
     [ChatCommandHandler]
     public class JailCommands
     {
         private static Plugins.PoliceConfig Plugin = (Eco.Plugins.PoliceConfig)null;
-
+        private static string dir = PoliceConfig.logDir;
         public static void Initialize(Eco.Plugins.PoliceConfig plugin) => Plugin = plugin;
 
-        [ChatSubCommand("AlteredEco", "Send a player to a jail cell", "arrest", ChatAuthorizationLevel.Admin)]
+        [ChatSubCommand("Police", "Send a player to a jail cell", "arrest", ChatAuthorizationLevel.User)]
         public static void SendtoCell(User user, User offender, int cellNumber, int sentenceTime, string reason)
         {
             var x = -1; var y = -1; var z = -1;
             Player player = offender.Player;
-            var inGroup = PrisonerManager.isPrisoner(offender);
+            var inGroup = PoliceManager.isPrisoner(offender);
+
+            if (user.SelectedItem is not BadgeItem)
+            {
+                user.Player.InfoBox(new LocString("Are you an officer? Let me see your badge."));
+                return;
+            }
 
             if (inGroup) { user.Player.InfoBox(new LocString(offender.Name + " is already in jail")); return; }
+
+            if (!offender.IsOnline) { user.Player.InfoBox(new LocString(offender.Name + " is not online")); return; }
 
             if (offender != null || cellNumber != null)
             {
@@ -58,52 +69,99 @@
             else return;
             var cellPos = new Vector3i(x, y, z);
             player.SetPosition((Vector3)cellPos);
-            PrisonerManager.Arrest(offender, cellPos, (double)sentenceTime);
+            PoliceManager.Arrest(offender, cellPos, (double)sentenceTime);
+            WriteLog(user.Name, offender.Name, sentenceTime.ToString(), TimeFormatter.FormatDateLong(WorldTime.Seconds + TimeUtil.HoursToSeconds(sentenceTime)), reason);
             offender.Player.OkBoxAwaitable(new LocString("You are in Jail for " + sentenceTime.ToString() + " hours!\n" + reason));
             user.Player.InfoBox(new LocString("You sent " + offender.Name + " to jail cell #" + cellNumber));
             Log.WriteErrorLineLocStr(Localizer.Format("[Altered Eco]: {0} sent {1} to jail cell #{2} on {3} for `{4}`.", (object)user.Name, (object)offender.Name, (object)cellNumber, (object)TimeFormatter.FormatDateLong(WorldTime.Seconds), (object)reason));
         }
 
-        [ChatSubCommand("AlteredEco", "Release a player from jail", "release", ChatAuthorizationLevel.Admin)]
+        [ChatSubCommand("Police", "Release a player from jail", "release", ChatAuthorizationLevel.User)]
         public static void ReleasefromJail(User user, User offender)
         {
             Player player = offender.Player;
-            var inGroup = PrisonerManager.isPrisoner(offender);
+            var inGroup = PoliceManager.isPrisoner(offender);
+
+            if (user.SelectedItem is not BadgeItem)
+            {
+                user.Player.InfoBox(new LocString("Are you an officer? Let me see your badge."));
+                return;
+            }
+
+            if (!offender.IsOnline) { user.Player.InfoBox(new LocString(offender.Name + " is not online")); return; }
 
             if (inGroup)
             {
                 player.SetPosition(new Vector3i(Plugins.PoliceConfig.ImpoundPosX, Plugins.PoliceConfig.ImpoundPosY, Plugins.PoliceConfig.ImpoundPosZ));
-                PrisonerManager.Release(offender);
+                PoliceManager.Release(offender);
                 user.Player.InfoBox(new LocString("You let " + offender.Name + " out of jail"));
             }
             else user.Player.InfoBox(new LocString(offender.Name + " is not a prisoner"));
         }
 
-        [ChatSubCommand("AlteredEco", "Check how much time you have left in jail", "jailtime", ChatAuthorizationLevel.User)]
+        [ChatSubCommand("Police", "Check how much time you have left in jail", "jailtime", ChatAuthorizationLevel.User)]
         public static void checkSentence(User user)
         {
-            var timeLeft = PrisonerManager.TimeLeft(user).ToString("0.00");
+            var timeLeft = PoliceManager.TimeLeft(user).ToString("0.00");
             user.Player.InfoBox(new LocString("You have " + timeLeft + " hours left in your sentence"));
         }
 
-        [ChatSubCommand("AlteredEco", "Change how much time a player has left in jail", "modifySentence", ChatAuthorizationLevel.Admin)]
+        [ChatSubCommand("Police", "Change how much time a player has left in jail", "modifySentence", ChatAuthorizationLevel.User)]
         public static void modifySentence(User user, User prisioner, int hoursToChangeBy)
         {
-            PrisonerManager.modifySentence(prisioner, (double)hoursToChangeBy);
+            if (user.SelectedItem is not BadgeItem)
+            {
+                user.Player.InfoBox(new LocString("Are you an officer? Let me see your badge."));
+                return;
+            }
+
+            PoliceManager.modifySentence(prisioner, (double)hoursToChangeBy);
         }
 
-        [ChatSubCommand("AlteredEco", "Change the location of a jail cell", "moveCell", ChatAuthorizationLevel.Admin)]
+        [ChatSubCommand("Police", "Change the location of a jail cell", "moveCell", ChatAuthorizationLevel.Admin)]
         public static void changeCellPos(User user, int cellNum, int x, int y, int z)
         {
             PoliceConfig.ChangeCellLoc(cellNum, x, y, z);
             user.Player.InfoBox(new LocString("Cell location " + cellNum + " changed to (" + x + "," + y + "," + z + ")"));
         }
 
-        [ChatSubCommand("AlteredEco", "Change the location of impound", "moveImpound", ChatAuthorizationLevel.Admin)]
+        [ChatSubCommand("Police", "Change the location of impound", "moveImpound", ChatAuthorizationLevel.Admin)]
         public static void changeImpoundPos(User user, int x, int y, int z)
         {
             PoliceConfig.ChangeImpoundLoc(x, y, z);
             user.Player.InfoBox(new LocString("Impound location changed to (" + x + "," + y + "," + z + ")"));
+        }
+
+        [ChatSubCommand("Police", "View all Jail Records", "jrecords", ChatAuthorizationLevel.User)]
+        public static void JailRecords(User user)
+        {
+
+            if (user.SelectedItem is not BadgeItem)
+            {
+                user.Player.InfoBox(new LocString("Are you an officer? Let me see your badge."));
+                return;
+            }
+
+            var title = new StringBuilder();
+            title.Append("<color=#3e78d6>Jail Records</color>");
+            var message = ReadLog();
+            user.Player.OpenInfoPanel(title.ToString(), new LocString(message.ToString()), "Jail Records");
+        }
+
+        [ChatSubCommand("Police", "View Police Records for a player", "crecord", ChatAuthorizationLevel.User)]
+        public static void CitizenRecord(User user)
+        {
+
+            if (user.SelectedItem is not BadgeItem)
+            {
+                user.Player.InfoBox(new LocString("Are you an officer? Let me see your badge."));
+                return;
+            }
+
+            var title = new StringBuilder();
+            title.Append("<color=#3e78d6>Police Records</color>");
+            var message = GenerateCitizenRecord(user.Name);
+            user.Player.OpenInfoPanel(title.ToString(), new LocString(message.ToString()), "Police Records");
         }
 
         [ChatSubCommand("AlteredEco", "Give yourself any item (Forced, ignores restrictions)", "AFG", ChatAuthorizationLevel.Admin)]
@@ -113,6 +171,82 @@
             if (obj == null)
                 return;
             AdminCommands.ForceGive(user, obj, number);
+        }
+
+
+        public static async void WriteLog(string officer, string offender, string sentence, string release, string reason)
+        {
+            try
+            {
+                if (!Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+
+                var report = GenerateRecord(officer, offender, sentence, release, reason);
+                File.AppendAllLines(dir + @"\ArrestLog.alteredeco", report);
+            }
+            catch (Exception e)
+            {
+                Log.WriteErrorLineLocStr($"Failed to Write Log: " + e);
+            }
+        }
+
+        public static StringBuilder ReadLog()
+        {
+            StringBuilder lines = new StringBuilder();
+
+            try
+            {
+                foreach (var line in File.ReadAllLines(dir + @"\ArrestLog.alteredeco"))
+                {
+                    lines.AppendLineLoc(FormattableStringFactory.Create(line));
+                }
+            }
+            catch (Exception e)
+            {
+                Log.WriteErrorLineLocStr($"Failed to Read Log: " + e);
+            }
+            return lines;
+        }
+
+        public static List<string> GenerateRecord(string officer, string offender,  string sentence, string release, string reason)
+        {
+            int newValue;
+
+            List<string> rs = new List<string>();
+            rs.Add("\n========Arrest Record========");
+            rs.Add("Officer Name: " + officer);
+            rs.Add("Prisoner Name: " + offender);
+            rs.Add("Sentence Time: " + sentence + " hours");
+            rs.Add("Arrest Date: " + TimeFormatter.FormatDateLong(WorldTime.Seconds));
+            rs.Add("Release Date: " + release);
+            rs.Add("Reason: " + reason);
+            return rs;
+        }
+
+        public static StringBuilder GenerateCitizenRecord(string player)
+        {
+            StringBuilder lines = new StringBuilder();
+            var user = UserManager.FindUserByName(player);
+            var hasRecord = PoliceManager.arrestCount.ContainsKey(player);
+            var hasTickets = PoliceManager.ticketCount.ContainsKey(player);
+            var id = user.SlgId == null ? user.SteamId : user.SlgId;
+            int newValue;
+
+            lines.AppendLineLoc(FormattableStringFactory.Create("<color=#119da4>========" + player + "'s Record========</color>"));
+            lines.AppendLineLoc(FormattableStringFactory.Create("\n<color=#00a8e8>Id Number: </color>" + id));
+            if (user.GetResidencyHouse() is not null)
+                lines.AppendLineLoc(FormattableStringFactory.Create("<color=#00a8e8>Home Address: </color>" + user.GetResidencyHouse().Name + "  " + user.GetResidencyHouse().CenterPos.ToString()));
+            else lines.AppendLineLoc(FormattableStringFactory.Create("<color=#00a8e8>Home Address: </color>" + "Homeless"));
+            lines.AppendLineLoc(FormattableStringFactory.Create("<color=#00a8e8>Birth Date: </color>" + TimeFormatter.FormatDateLong(user.CreationTime)));
+            lines.AppendLineLoc(FormattableStringFactory.Create("<color=#00a8e8>Age: </color>" + TimeFormatter.FormatTimeSince(user.CreationTime, WorldTime.Seconds)));
+            lines.AppendLineLoc(FormattableStringFactory.Create("<color=#00a8e8>Reputation: </color>" + user.Reputation));
+            newValue = hasTickets ? PoliceManager.ticketCount[player] : 0;
+            lines.AppendLineLoc(FormattableStringFactory.Create("<color=#00a8e8>Number of Tickets: </color>" + newValue));
+            newValue = hasRecord ? PoliceManager.arrestCount[player] : 0;
+            lines.AppendLineLoc(FormattableStringFactory.Create("<color=#00a8e8>Number of Arrests: </color>" + newValue));
+            newValue = hasRecord ? PoliceManager.escapeAttempts[player] : 0;
+            lines.AppendLineLoc(FormattableStringFactory.Create("<color=#00a8e8>Escape Attempts: </color>" + newValue));
+            return lines;
         }
     }
 }
