@@ -208,7 +208,7 @@
             return lines;
         }
 
-        public static List<string> GenerateRecord(string officer, string offender,  string sentence, string release, string reason)
+        public static List<string> GenerateRecord(string officer, string offender, string sentence, string release, string reason)
         {
             int newValue;
 
@@ -227,24 +227,26 @@
         {
             StringBuilder lines = new StringBuilder();
             var user = UserManager.FindUserByName(player);
+            var userName = player.ToLower()[player.Length - 1] == char.Parse("s") ? player : player + "'s";
             var hasRecord = PoliceManager.arrestCount.ContainsKey(player);
+            var hasEscaped = PoliceManager.escapeAttempts.ContainsKey(player);
             var hasTickets = PoliceManager.ticketCount.ContainsKey(player);
             var id = user.SlgId == null ? user.SteamId : user.SlgId;
             int newValue;
 
-            lines.AppendLineLoc(FormattableStringFactory.Create("<color=#119da4>========" + player + "'s Record========</color>"));
+            lines.AppendLineLoc(FormattableStringFactory.Create("<color=#119da4>========" + userName + "'s Record========</color>"));
             lines.AppendLineLoc(FormattableStringFactory.Create("\n<color=#00a8e8>Id Number: </color>" + id));
             if (user.GetResidencyHouse() is not null)
-                lines.AppendLineLoc(FormattableStringFactory.Create("<color=#00a8e8>Home Address: </color>" + user.GetResidencyHouse().Name + "  " + user.GetResidencyHouse().CenterPos.ToString()));
+                lines.AppendLineLoc(FormattableStringFactory.Create("<color=#00a8e8>Home Address: </color>" + user.GetResidencyHouse().MarkedUpName + "  " + user.GetResidencyHouse().CenterPos.ToString()));
             else lines.AppendLineLoc(FormattableStringFactory.Create("<color=#00a8e8>Home Address: </color>" + "Homeless"));
             lines.AppendLineLoc(FormattableStringFactory.Create("<color=#00a8e8>Birth Date: </color>" + TimeFormatter.FormatDateLong(user.CreationTime)));
             lines.AppendLineLoc(FormattableStringFactory.Create("<color=#00a8e8>Age: </color>" + TimeFormatter.FormatTimeSince(user.CreationTime, WorldTime.Seconds)));
             lines.AppendLineLoc(FormattableStringFactory.Create("<color=#00a8e8>Reputation: </color>" + user.Reputation));
-            newValue = hasTickets ? PoliceManager.ticketCount[player] : 0;
+            newValue = hasTickets ? PoliceManager.ticketCount.GetOrDefault(player) : 0;
             lines.AppendLineLoc(FormattableStringFactory.Create("<color=#00a8e8>Number of Tickets: </color>" + newValue));
-            newValue = hasRecord ? PoliceManager.arrestCount[player] : 0;
+            newValue = hasRecord ? PoliceManager.arrestCount.GetOrDefault(player) : 0;
             lines.AppendLineLoc(FormattableStringFactory.Create("<color=#00a8e8>Number of Arrests: </color>" + newValue));
-            newValue = hasRecord ? PoliceManager.escapeAttempts[player] : 0;
+            newValue = hasEscaped ? PoliceManager.escapeAttempts.GetOrDefault(player) : 0;
             lines.AppendLineLoc(FormattableStringFactory.Create("<color=#00a8e8>Escape Attempts: </color>" + newValue));
             return lines;
         }
