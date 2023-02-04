@@ -43,17 +43,15 @@ namespace Eco.Mods.TechTree
     [RequireComponent(typeof(SolidAttachedSurfaceRequirementComponent))]
     public partial class TollBarrierObject : DoorObject, IRepresentsItem
     {
-        [Serialized] public bool Barrier = true;
+        [Serialized] public bool openGate = true;
         public override LocString DisplayName { get { return Localizer.DoStr("Toll Barrier"); } }
         public override TableTextureMode TableTexture => TableTextureMode.Stone;
         public virtual Type RepresentedItemType { get { return typeof(TollBarrierItem); } }
-        public int i = 0;
 
         protected override void Initialize()
         {
             this.ModsPreInitialize();
             base.Initialize();
-
             this.ModsPostInitialize();
         }
 
@@ -65,14 +63,14 @@ namespace Eco.Mods.TechTree
 
             if (selectedItem is BadgeItem || isAdmin)
             {
-                Barrier = !Barrier;
+                openGate = !openGate;
                 return InteractResult.Success;
             }
 
             if (selectedItem is ReceiptItem)
             {
                 user.Inventory.TryRemoveItem<ReceiptItem>(user);
-                Barrier = !Barrier;
+                openGate = !openGate;
                 return InteractResult.SuccessLoc($"You may now drive thru... Hurry!!");
             }
             return InteractResult.FailureLoc($"Pay Parking ticket by buying a gate pass, then right click with gate pass in hand to open. Closes after 10 seconds!!!!!");
@@ -81,13 +79,8 @@ namespace Eco.Mods.TechTree
         public override void Tick()
         {
             base.Tick();
-            SetAnimatedState("opengate", this.Operating && Barrier);
-            Barrier = false;
-        }
-
-        private void Destroy()
-        {
-
+            SetAnimatedState("opengate", this.Operating && openGate);
+            openGate = false;
         }
 
         /// <summary>Hook for mods to customize WorldObject before initialization. You can change housing values here.</summary>
@@ -101,10 +94,7 @@ namespace Eco.Mods.TechTree
     [Category("Hidden"), Tag("NotInBrowser")]
     public partial class TollBarrierItem : WorldObjectItem<TollBarrierObject>
     {
-        public override LocString DisplayDescription => Localizer.DoStr("");
-        public override DirectionAxisFlags RequiresSurfaceOnSides { get; } = 0
-                    | DirectionAxisFlags.Down
-                ;
-
+        public override LocString DisplayDescription => Localizer.DoStr("Pay the Toll!!!!!");
+        public override DirectionAxisFlags RequiresSurfaceOnSides { get; } = 0 | DirectionAxisFlags.Down;
     }
 }
