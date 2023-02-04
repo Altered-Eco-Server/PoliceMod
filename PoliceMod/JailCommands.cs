@@ -77,10 +77,10 @@
         }
 
         [ChatSubCommand("Police", "Release a player from jail", "release", ChatAuthorizationLevel.User)]
-        public static void ReleasefromJail(User user, User offender)
+        public static void ReleasefromJail(User user, User prisoner)
         {
-            Player player = offender.Player;
-            var inGroup = PoliceManager.isPrisoner(offender);
+            Player player = prisoner.Player;
+            var inGroup = PoliceManager.isPrisoner(prisoner);
 
             if (user.SelectedItem is not BadgeItem)
             {
@@ -88,26 +88,30 @@
                 return;
             }
 
-            if (!offender.IsOnline) { user.Player.InfoBox(new LocString(offender.Name + " is not online")); return; }
+            if (!prisoner.IsOnline) { user.Player.InfoBox(new LocString(prisoner.Name + " is not online")); return; }
 
             if (inGroup)
             {
                 player.SetPosition(new Vector3i(Plugins.PoliceConfig.ImpoundPosX, Plugins.PoliceConfig.ImpoundPosY, Plugins.PoliceConfig.ImpoundPosZ));
-                PoliceManager.Release(offender);
-                user.Player.InfoBox(new LocString("You let " + offender.Name + " out of jail"));
+                PoliceManager.Release(prisoner);
+                user.Player.InfoBox(new LocString("You let " + prisoner.Name + " out of jail"));
             }
-            else user.Player.InfoBox(new LocString(offender.Name + " is not a prisoner"));
+            else user.Player.InfoBox(new LocString(prisoner.Name + " is not a prisoner"));
         }
 
         [ChatSubCommand("Police", "Check how much time you have left in jail", "jailtime", ChatAuthorizationLevel.User)]
         public static void checkSentence(User user)
         {
-            var timeLeft = PoliceManager.TimeLeft(user).ToString("0.00");
-            user.Player.InfoBox(new LocString("You have " + timeLeft + " hours left in your sentence"));
+            if (PoliceManager.isPrisoner(user))
+            {
+                var timeLeft = PoliceManager.TimeLeft(user).ToString("0.00");
+                user.Player.InfoBox(new LocString("You have " + timeLeft + " hours left in your sentence"));
+            }
+            else user.Player.InfoBox(new LocString("You are not a prisoner"));
         }
 
         [ChatSubCommand("Police", "Change how much time a player has left in jail", "modifySentence", ChatAuthorizationLevel.User)]
-        public static void modifySentence(User user, User prisioner, int hoursToChangeBy)
+        public static void modifySentence(User user, User prisoner, int hoursToChangeBy)
         {
             if (user.SelectedItem is not BadgeItem)
             {
@@ -115,7 +119,7 @@
                 return;
             }
 
-            PoliceManager.modifySentence(prisioner, (double)hoursToChangeBy);
+            PoliceManager.modifySentence(prisoner, (double)hoursToChangeBy);
         }
 
         [ChatSubCommand("Police", "Change the location of a jail cell", "moveCell", ChatAuthorizationLevel.Admin)]
@@ -149,7 +153,7 @@
         }
 
         [ChatSubCommand("Police", "View Police Records for a player", "crecord", ChatAuthorizationLevel.User)]
-        public static void CitizenRecord(User user)
+        public static void CitizenRecord(User user, User citizen)
         {
 
             if (user.SelectedItem is not BadgeItem)
@@ -160,7 +164,7 @@
 
             var title = new StringBuilder();
             title.Append("<color=#3e78d6>Police Records</color>");
-            var message = GenerateCitizenRecord(user.Name);
+            var message = GenerateCitizenRecord(citizen.Name);
             user.Player.OpenInfoPanel(title.ToString(), new LocString(message.ToString()), "Police Records");
         }
 
