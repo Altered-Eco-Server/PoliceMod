@@ -36,5 +36,5 @@ This ECO mod introduces a system for incarcerating players and impounding vehicl
 
 The mod allows for the following configuration adjustments:
 
-- **Cell Positions**: Define the positions of the prison cells within the game's configuration files.
-- **Impound Position**: Define the positions of the prison cells within the game's configuration files.
+- **Cell Positions**: Define the positions of the prison cells within the mods configuration file.
+- **Impound Position**: Define the positions of the prison cells within the mods configuration file.
